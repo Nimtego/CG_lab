@@ -84,7 +84,6 @@ public class ShapesDragging extends JComponent {
     }
 
     private Item findItem(Point2D point) {
-        // process items in the order reversed to drawing order
         ListIterator<Item> iter = items.listIterator(items.size());
         while (iter.hasPrevious()) {
             Item item = iter.previous();
