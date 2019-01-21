@@ -20,9 +20,10 @@ public class ShapesDragging extends JComponent {
     private double dx;
     private double dy;
     private double scale;
+    private DragShape dragShape;
 
     public ShapesDragging() {
-        items = new ArrayList<Item>();
+        items = new ArrayList<>();
         dx = 0.0;
         dy = 0.0;
         scale = 1.0;
@@ -33,6 +34,7 @@ public class ShapesDragging extends JComponent {
         addMouseMotionListener(dragShape);
         addMouseMotionListener(panZoom);
         addMouseWheelListener(panZoom);
+        this.dragShape = dragShape;
     }
 
     public void addItem(Shape shape, Color color) {
@@ -58,6 +60,13 @@ public class ShapesDragging extends JComponent {
         dx += coef * x;
         dy += coef * y;
         scale *= factor;
+    }
+
+    public void rev(final Point2D point) {
+        if (dragShape.lastItem != null) {
+            dragShape.lastItem.transform.rotate(1, point.getX(), point.getY());
+            System.out.println("X = " +point.getX() +" Y = " +point.getY());
+        }
     }
 
     @Override
@@ -100,7 +109,8 @@ public class ShapesDragging extends JComponent {
     }
 
     private class DragShape extends MouseAdapter {
-        private Item hoverItem;
+        Item hoverItem;
+        Item lastItem;
         private boolean isDragging;
         private Point previous;
         private Cursor savedCursor;
@@ -109,7 +119,6 @@ public class ShapesDragging extends JComponent {
         public void mouseDragged(MouseEvent e) {
             if (!isDragging)
                 return;
-            // don't move item if both mouse buttons are pressed
             if ((e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == 0) {
                 Point2D point = mapToScene(e.getPoint());
                 Point2D prevPoint = mapToScene(previous);
@@ -129,11 +138,13 @@ public class ShapesDragging extends JComponent {
             Item item = findItem(point);
             if (hoverItem == null && item != null) {
                 savedCursor = getCursor();
+                lastItem = item;
                 setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             } else if (hoverItem != null && item == null) {
                 setCursor(savedCursor);
             }
             hoverItem = item;
+
         }
 
         @Override
@@ -190,9 +201,13 @@ public class ShapesDragging extends JComponent {
 
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
-            double factor = Math.pow(1.2, e.getWheelRotation());
-            Point2D point = mapToScene(e.getPoint());
-            scale(factor, point.getX(), point.getY());
+            if (!e.isShiftDown()) {
+                double factor = Math.pow(1.2, e.getWheelRotation());
+                Point2D point = mapToScene(e.getPoint());
+                scale(factor, point.getX(), point.getY());
+            } else {
+                rev(e.getPoint());
+            }
             repaint();
         }
     }
@@ -227,7 +242,7 @@ public class ShapesDragging extends JComponent {
                 path.closePath();
                 shapesDragging.addItem(stroke.createStrokedShape(path), Color.YELLOW);
                 frame.getContentPane().add(shapesDragging);
-                frame.setSize(600, 400);
+                frame.setSize(800, 600);
                 frame.setVisible(true);
             }
         });
